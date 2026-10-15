@@ -7,6 +7,7 @@ process.env.UPLOAD_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'aarvi-uploads-')
 process.env.ADMIN_EMAIL = 'admin@test.com';
 process.env.ADMIN_PASSWORD = 'Admin@12345';
 
+
 const request = require('supertest');
 const mongoose = require('mongoose');
 const env = require('../src/config/env');
@@ -502,6 +503,22 @@ describe('uploads', () => {
     const res = await api().post('/api/admin/upload').set(auth()).attach('file', Buffer.from('%PDF-1.4 test'), { filename: 'brochure.pdf', contentType: 'application/pdf' });
     expect(res.status).toBe(201);
     expect(res.body.data.url.endsWith('.pdf')).toBe(true);
+  });
+  test('with BLOB_READ_WRITE_TOKEN set, files go to Vercel Blob and the public URL is returned', async () => {
+    process.env.BLOB_READ_WRITE_TOKEN = 'test-token';
+    const uploadModule = require('../src/middleware/upload');
+    uploadModule.putBlob = async (pathname) => ({ url: `https://store.public.blob.vercel-storage.com/${pathname}`, pathname });
+    try {
+      const res = await api().post('/api/admin/upload').set(auth()).attach('file', PNG, { filename: 'Hero Photo.png', contentType: 'image/png' });
+      expect(res.status).toBe(201);
+      expect(res.body.data.url).toMatch(/^https:\/\/store\.public\.blob\.vercel-storage\.com\/uploads\/hero-photo\.png$/);
+      expect(res.body.data.size).toBe(PNG.length);
+      const bad = await api().post('/api/admin/upload').set(auth()).attach('file', Buffer.from('x'), { filename: 'a.txt', contentType: 'text/plain' });
+      expect(bad.status).toBe(400);
+    } finally {
+      delete uploadModule.putBlob;
+      delete process.env.BLOB_READ_WRITE_TOKEN;
+    }
   });
   test('missing upload 404 JSON', async () => {
     const res = await api().get('/uploads/not-there.png');

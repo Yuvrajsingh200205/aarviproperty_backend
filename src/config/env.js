@@ -29,6 +29,10 @@ const env = {
   },
 };
 
+if (env.isProd && !process.env.MONGODB_URI && !process.env.VERCEL) {
+  console.warn('MONGODB_URI is not set; falling back to a local MongoDB');
+}
+
 if (env.isProd && env.jwtSecret === 'dev-only-secret-change-me') {
   throw new Error('JWT_SECRET must be set in production');
 }

@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const { z } = require('zod');
 const { requireAuth } = require('../middleware/auth');
-const { upload } = require('../middleware/upload');
+const { upload, persistUploads } = require('../middleware/upload');
 const { crudHandlers, parsePaging, escapeRegex } = require('../utils/crud');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
@@ -202,12 +202,12 @@ router.put(
 );
 
 // ---------- File upload ----------
-const fileResult = (f) => ({ url: `/uploads/${f.filename}`, filename: f.filename, size: f.size, mimetype: f.mimetype });
-router.post('/upload', upload.single('file'), (req, res) => {
+const fileResult = (f) => ({ url: f.url || `/uploads/${f.filename}`, filename: f.filename, size: f.size, mimetype: f.mimetype });
+router.post('/upload', upload.single('file'), persistUploads, (req, res) => {
   if (!req.file) throw ApiError.badRequest('No file received (field name must be "file")');
   res.status(201).json({ success: true, data: fileResult(req.file) });
 });
-router.post('/upload-multiple', upload.array('files', 20), (req, res) => {
+router.post('/upload-multiple', upload.array('files', 20), persistUploads, (req, res) => {
   if (!req.files?.length) throw ApiError.badRequest('No files received (field name must be "files")');
   res.status(201).json({ success: true, data: req.files.map(fileResult) });
 });
