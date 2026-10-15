@@ -19,7 +19,12 @@ See `.env.example`. Important ones for production:
 - `ADMIN_EMAIL` / `ADMIN_PASSWORD` – first admin created by `npm run seed`
 - `SMTP_*`, `MAIL_TO` – optional email alerts for new enquiries
 
-## Deploy
+## Deploy on Vercel
+This repo is ready for Vercel (`api/index.js` + `vercel.json`). Add env vars `MONGODB_URI`, `JWT_SECRET`, `CLIENT_URL`,
+create a Blob store (`vercel blob create-store <name> -a public`) so uploads work (`BLOB_READ_WRITE_TOKEN`), then `vercel deploy --prod`.
+Note: Vercel limits request bodies to ~4.5 MB, so keep uploaded files small.
+
+## Deploy (VPS / Render)
 Needs a host with a **persistent disk** (uploads are stored in `uploads/`), e.g. Render, Railway, Fly.io or a VPS.
 Build command: `npm install` · Start command: `npm start` · set `NODE_ENV=production`.
 Then run `npm run seed` once (use a shell on the host).
